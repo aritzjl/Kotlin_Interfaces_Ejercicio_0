@@ -1,6 +1,10 @@
 package com.example.composehelloworld
 
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -9,19 +13,33 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -39,39 +58,143 @@ import androidx.compose.ui.unit.sp
 import com.example.composehelloworld.ui.theme.ComposeHelloWorldTheme
 import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 
+var total_likes by mutableIntStateOf(0)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ColumnsTest()
+            ViewContainer()
         }
     }
 }
 
-
-
-@Preview(showBackground = true)
+@Preview
 @Composable
-fun ColumnsTest() {
-    var counter by remember { mutableStateOf(value=0) }
-    LazyColumn(modifier=Modifier.fillMaxSize().background(Color.DarkGray))
+fun FAB(){
+    FloatingActionButton(onClick = {
+        total_likes++
+    }) {                     Image(painter= painterResource(R.drawable.img_3), contentDescription = "Icono", modifier= Modifier
+        .width(48.dp)
+        .clickable {
+            total_likes++
+        }) }
+}
+
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@Preview
+@Composable
+fun ViewContainer(){
+    Scaffold(
+        topBar = { ToolBar() },
+        content = { paddingValues ->
+            MainContent(paddingValues)
+        },
+        floatingActionButton = { FAB() },
+        bottomBar = { BottomBar() },
+    )
+}
+
+
+@Composable
+fun BottomBar(){
+    val context = LocalContext.current
+
+    BottomAppBar(
+        containerColor = Color.Black,
+        contentColor = Color.White,
+        actions = {
+            IconButton(onClick = {
+                val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = Uri.parse("mailto:") // Solo abre aplicaciones de correo
+                    putExtra(Intent.EXTRA_EMAIL, arrayOf("aritzzjl@gmail.com")) // Correo destinatario
+                    putExtra(Intent.EXTRA_SUBJECT, "He visto tu portfolio de Kotlin") // Asunto del correo
+                }
+
+// Iniciar el intent
+                if (emailIntent.resolveActivity(context.packageManager) != null) {
+                    context.startActivity(emailIntent)
+                }
+            }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_email_24),
+                    contentDescription = "Compartir",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ToolBar() {
+    val context = LocalContext.current
+
+    TopAppBar(
+        title = {
+            Text(text = "Aritz Jaber Profile", color = Color.Black)
+        },
+        actions = {
+            IconButton(onClick = {
+                val shareIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_TEXT, "Echa un vistazo a mi web https://github.com/aritzjl")
+                    type = "text/plain"
+                }
+                context.startActivity(Intent.createChooser(shareIntent, "Compartir vía"))
+            }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.share_icon),
+                    contentDescription = "Compartir",
+                    tint = Color.Black
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.White
+        )
+    )
+}
+
+@Composable
+fun MainContent(paddingValues: PaddingValues) {
+    val counter by remember { derivedStateOf { total_likes } }
+
+    LazyColumn(modifier= Modifier
+        .fillMaxSize()
+        .background(Color.DarkGray)
+        .padding(paddingValues))
     {
         item{
-            Image(painter= painterResource(R.drawable.img_1), contentDescription = "Icono", modifier = Modifier.fillMaxWidth().height(400.dp).clip(
-                CircleShape))
-            Text(text = "Aritz Jaber", fontWeight = FontWeight.ExtraBold ,fontSize = 32.sp, color = Color.White, modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = TextAlign.Center)
-            Text(text = "** Full Stack Developer **", fontWeight = FontWeight.SemiBold ,fontSize = 28.sp, color = Color.LightGray, modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = TextAlign.Center)
-            LazyRow(horizontalArrangement = Arrangement.SpaceBetween, modifier=Modifier.fillMaxWidth().padding(16.dp))
+            Image(painter= painterResource(R.drawable.img_1), contentDescription = "Icono", modifier = Modifier
+                .fillMaxWidth()
+                .height(400.dp)
+                .clip(
+                    CircleShape
+                ))
+            Text(text = "Aritz Jaber", fontWeight = FontWeight.ExtraBold ,fontSize = 32.sp, color = Color.White, modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp), textAlign = TextAlign.Center)
+            Text(text = "** Full Stack Developer **", fontWeight = FontWeight.SemiBold ,fontSize = 28.sp, color = Color.LightGray, modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp), textAlign = TextAlign.Center)
+            LazyRow(horizontalArrangement = Arrangement.SpaceBetween, modifier= Modifier
+                .fillMaxWidth()
+                .padding(16.dp))
             {
                 item{
-                    Image(painter= painterResource(R.drawable.img_3), contentDescription = "Icono", modifier=Modifier.width(48.dp).clickable {
-                        counter++
-                    })
-                    Text(text = counter.toString(), fontWeight = FontWeight.Normal ,fontSize = 20.sp, color = Color.White, modifier = Modifier.padding(10.dp).padding(top = 12.dp))
+                    Image(painter= painterResource(R.drawable.img_3), contentDescription = "Icono", modifier=Modifier.width(48.dp))
+                    Text(text = counter.toString(), fontWeight = FontWeight.Normal ,fontSize = 20.sp, color = Color.White, modifier = Modifier
+                        .padding(10.dp)
+                        .padding(top = 12.dp))
                 }
             }
-            Row (modifier=Modifier.fillMaxWidth().height(5.dp).background(Color.LightGray)){
+            Row (modifier= Modifier
+                .fillMaxWidth()
+                .height(5.dp)
+                .background(Color.LightGray)){
 
             }
             Text(
@@ -93,7 +216,9 @@ fun ColumnsTest() {
                 text="Conocimientos Técnicos \uD83D\uDEE0\uFE0F"
             )
 
-            LazyRow(horizontalArrangement = Arrangement.SpaceEvenly, modifier=Modifier.fillMaxWidth().padding(16.dp))
+            LazyRow(horizontalArrangement = Arrangement.SpaceEvenly, modifier= Modifier
+                .fillMaxWidth()
+                .padding(16.dp))
             {
                 item {
                     Image(painter= painterResource(R.drawable.img_4), contentDescription = "Icono", modifier=Modifier.width(48.dp))
@@ -123,7 +248,9 @@ fun ColumnsTest() {
                 text="Contacto \uD83D\uDCE7 \uD83D\uDCDE"
             )
 
-            LazyRow(horizontalArrangement = Arrangement.SpaceEvenly, modifier=Modifier.fillMaxWidth().padding(16.dp))
+            LazyRow(horizontalArrangement = Arrangement.SpaceEvenly, modifier= Modifier
+                .fillMaxWidth()
+                .padding(16.dp))
             {
                 item {
                     Image(painter= painterResource(R.drawable.img_4), contentDescription = "Icono", modifier=Modifier.width(48.dp))
