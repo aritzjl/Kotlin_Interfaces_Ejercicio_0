@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Gallery
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
@@ -45,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -63,14 +67,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.composehelloworld.components.ArtworkCard
 import com.example.composehelloworld.ui.theme.ComposeHelloWorldTheme
 import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 
 var total_likes by mutableIntStateOf(0)
+var is_single_column by mutableStateOf(false)
 var toolbarTitle by mutableStateOf("Inicio")
 
 class MainActivity : ComponentActivity() {
@@ -97,46 +104,75 @@ fun FAB(){
             context.startActivity(emailIntent)
         }
     }) {
-        Image(painter= painterResource(R.drawable.baseline_email_24), contentDescription = "Icono", modifier= Modifier
-            .width(48.dp)
-            .clickable {
-                val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse("mailto:")
-                    putExtra(Intent.EXTRA_EMAIL, arrayOf("aritzzjl@gmail.com"))
-                    putExtra(Intent.EXTRA_SUBJECT, "He visto tu portfolio de Kotlin")
-                }
-                if (emailIntent.resolveActivity(context.packageManager) != null) {
-                    context.startActivity(emailIntent)
-                }
-            })
+        if (toolbarTitle != "Galería")
+        {
+            Image(painter= painterResource(R.drawable.baseline_email_24), contentDescription = "Icono", modifier= Modifier
+                .width(48.dp)
+                .clickable {
+                    val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:")
+                        putExtra(Intent.EXTRA_EMAIL, arrayOf("aritzzjl@gmail.com"))
+                        putExtra(Intent.EXTRA_SUBJECT, "He visto tu portfolio de Kotlin")
+                    }
+                    if (emailIntent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(emailIntent)
+                    }
+                })
+        }
+        else {
+            Image(painter= painterResource(R.drawable.baseline_add_circle_outline_24), contentDescription = "Icono", modifier= Modifier
+                .width(48.dp)
+                .clickable {
+
+                })
+        }
+
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ToolBar() {
+fun ToolBar(viewModel: GalleryViewModel?) {
     val context = LocalContext.current
     TopAppBar(
         title = { Text(text = toolbarTitle, color = Color.Black) },
         actions = {
-            IconButton(onClick = {
-                val shareIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, "Echa un vistazo a mi web https://github.com/aritzjl")
-                    type = "text/plain"
+            if (toolbarTitle != "Galería") {
+                IconButton(onClick = {
+                    val shareIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_TEXT, "Echa un vistazo a mi web https://github.com/aritzjl")
+                        type = "text/plain"
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Compartir vía"))
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.share_icon),
+                        contentDescription = "Compartir",
+                        tint = Color.Black
+                    )
                 }
-                context.startActivity(Intent.createChooser(shareIntent, "Compartir vía"))
-            }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.share_icon),
-                    contentDescription = "Compartir",
-                    tint = Color.Black
-                )
+            } else {
+                IconButton(onClick = {
+                    is_single_column = !is_single_column
+                }) {
+                    val icon = if (is_single_column) {
+                        painterResource(id = R.drawable.baseline_apps_24) // Icono de cuadrícula
+                    } else {
+                        painterResource(id = R.drawable.baseline_view_list_24) // Icono de lista
+                    }
+                    Icon(
+                        painter = icon,
+                        contentDescription = "Alternar vista",
+                        tint = Color.Black
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
     )
 }
+
 
 @Composable
 fun BottomNavBar(navController: NavHostController) {
@@ -198,13 +234,13 @@ fun BottomNavBar(navController: NavHostController) {
 fun SettingsView() {
     val navController = rememberNavController()
     Scaffold(
-        topBar = { ToolBar() },
+        topBar = { ToolBar(null) },
         bottomBar = { BottomNavBar(navController) },
         content = { paddingValues ->
             NavHost(navController = navController, startDestination = "home") {
                 composable("home") { HomeContent(paddingValues) }
                 composable("about") { AboutView(paddingValues) }
-                composable("gallery") { GalleryContent(paddingValues) }
+                composable("gallery") { GalleryView(paddingValues) }
                 composable("settings") { SettingsContent(paddingValues) }
             }
         }
@@ -230,13 +266,13 @@ fun SettingsContent(paddingValues: PaddingValues) {
 fun HomeView() {
     val navController = rememberNavController()
     Scaffold(
-        topBar = { ToolBar() },
+        topBar = { ToolBar(null) },
         bottomBar = { BottomNavBar(navController) },
         content = { paddingValues ->
             NavHost(navController = navController, startDestination = "home") {
                 composable("home") { HomeContent(paddingValues) }
                 composable("about") { AboutView(paddingValues) }
-                composable("gallery") { GalleryContent(paddingValues) }
+                composable("gallery") { GalleryView(paddingValues) }
                 composable("settings") { SettingsContent(paddingValues) }
             }
         }
@@ -258,46 +294,53 @@ fun HomeContent(paddingValues: PaddingValues) {
 }
 
 //  GALLERY VIEW
-@Preview
-@Composable
-fun GalleryView() {
-    val navController = rememberNavController()
-    Scaffold(
-        topBar = { ToolBar() },
-        bottomBar = { BottomNavBar(navController) },
-        content = { paddingValues ->
-            NavHost(navController = navController, startDestination = "home") {
-                composable("home") { HomeContent(paddingValues) }
-                composable("about") { AboutView(paddingValues) }
-                composable("gallery") { GalleryContent(paddingValues) }
-                composable("settings") { SettingsContent(paddingValues) }
-            }
-        }
-    )
-}
 
 @Composable
-fun GalleryContent(paddingValues: PaddingValues) {
-    LazyColumn(modifier= Modifier
-        .fillMaxSize()
-        .background(Color.DarkGray)
-        .padding(paddingValues)) {
-        item {
-            Text(text = "Galería Proyectos", fontWeight = FontWeight.ExtraBold ,fontSize = 32.sp, color = Color.White, modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp), textAlign = TextAlign.Center)
-        }
+fun GalleryView(paddingValues: PaddingValues) {
+    val navController = rememberNavController()
+    val viewModel: GalleryViewModel = viewModel()
+
+    Scaffold(
+        topBar = { ToolBar(viewModel) },
+        bottomBar = { BottomNavBar(navController) },
+        floatingActionButton = { FAB() }
+    ) { innerPadding ->
+        GalleryContent(paddingValues, viewModel.isSingleColumn, viewModel.artworks.value, innerPadding)
     }
 }
 
 
+
+@Composable
+fun GalleryContent(
+    paddingValues: PaddingValues,
+    isSingleColumn: Boolean, // Cambiar a MutableState<Boolean>
+    artworks: List<Artwork>, // Asegúrate de que este tipo sea List<Artwork>
+    paddingValues2: PaddingValues,
+) {
+    LazyVerticalGrid(
+        columns = if (is_single_column) GridCells.Fixed(1) else GridCells.Fixed(2),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0.1f, 0.1f, 0.1f, 0.9f))
+            .padding(paddingValues)
+    ) {
+        items(
+            count = artworks.size,
+            key = { index -> artworks[index].name }
+        ) { index ->
+            val artwork = artworks[index]
+            ArtworkCard(artwork)
+        }
+    }
+}
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun AboutView(paddingValues2: PaddingValues) {
     val navController = rememberNavController()
     Scaffold(
-        topBar = { ToolBar() },
+        topBar = { ToolBar(null) },
         bottomBar = { BottomNavBar(navController) },
         floatingActionButton = { FAB() },
         content = { paddingValues ->
