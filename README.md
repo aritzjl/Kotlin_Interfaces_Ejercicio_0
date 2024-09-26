@@ -1,3 +1,8 @@
+# Ejercicio 4 (galería)
+https://github.com/user-attachments/assets/374ee81e-f52d-4259-bf77-85764ee6464a
+
+
+
 # Ejercicio 3 (Cambiar de vistas)
 https://github.com/user-attachments/assets/f3cecfe8-69c5-4737-abff-9f8be3647248
 
